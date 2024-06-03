@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
+import Notification from "./components/Notification";
+
 import personsService from "./services/persons";
 
 const App = () => {
@@ -9,6 +11,8 @@ const App = () => {
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [filterName, setFilterName] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationClass, setNotificationClass] = useState("");
 
   useEffect(() => {
     console.log("effect");
@@ -30,6 +34,15 @@ const App = () => {
     setNewNumber(event.target.value);
   };
 
+  const showNotification = (message, className, duration = 2000) => {
+    setNotificationMessage(message);
+    setNotificationClass(className);
+    setTimeout(() => {
+      setNotificationMessage("");
+      setNotificationClass("");
+    }, duration);
+  };
+  
   const handleClick = (event) => {
     event.preventDefault();
     console.log("Add clicked");
@@ -37,6 +50,12 @@ const App = () => {
     const nameExists = persons.some((person) => person.name === newName);
     console.log("Exists:", nameExists);
 
+    const personObject = {
+      name: newName,
+      number: newNumber,
+      id: persons.length > 0 ? persons[persons.length - 1].id + 1 : 1,
+    };
+    
     if (nameExists) {
       if (window.confirm(`${newName} is already added to the phonebook, replace the old number with a new one?`)) {
         const person = persons.find((person) => person.name === newName);
@@ -46,17 +65,14 @@ const App = () => {
           setPersons(persons.map(p => p.id !== person.id ? p : returnedPerson));
           setNewName("");
           setNewNumber("");
+
+          showNotification(`Updated ${personObject.name}`, 'success')
+
         })
       }
       console.log("Duplicate alert");
       return;
     }
-
-    const personObject = {
-      name: newName,
-      number: newNumber,
-      id: persons.length > 0 ? persons[persons.length - 1].id + 1 : 1,
-    };
 
     personsService.addPerson(personObject).then(response => {
       const updatedPersons = persons.concat(response);
@@ -65,6 +81,8 @@ const App = () => {
       setPersons(updatedPersons);
       setNewName("");
       setNewNumber("");
+
+      showNotification(`Added ${personObject.name}`, 'success')
     });
   };
 
@@ -83,6 +101,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={notificationMessage} notificationClass={notificationClass}/>
       <Filter filter={filterName} handleFilter={handleFilter} />
       <h2>Add a new</h2>
       <PersonForm
