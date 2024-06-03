@@ -38,7 +38,16 @@ const App = () => {
     console.log("Exists:", nameExists);
 
     if (nameExists) {
-      alert(`${newName} is already added to the phonebook`);
+      if (window.confirm(`${newName} is already added to the phonebook, replace the old number with a new one?`)) {
+        const person = persons.find((person) => person.name === newName);
+        const updatedPerson = { ...person, number: newNumber };
+
+        personsService.updatePerson(person.id, updatedPerson).then(returnedPerson => {
+          setPersons(persons.map(p => p.id !== person.id ? p : returnedPerson));
+          setNewName("");
+          setNewNumber("");
+        })
+      }
       console.log("Duplicate alert");
       return;
     }
@@ -46,7 +55,7 @@ const App = () => {
     const personObject = {
       name: newName,
       number: newNumber,
-      id: `${persons.length > 0 ? persons[persons.length - 1].id + 1 : 1}`,
+      id: persons.length > 0 ? persons[persons.length - 1].id + 1 : 1,
     };
 
     personsService.addPerson(personObject).then(response => {
@@ -60,9 +69,9 @@ const App = () => {
   };
 
   const handleDelete = (event) => {
-    console.log(event.target)
-    const id = parseInt(event.target.value.id);
-    const personToDelete = persons.find(person => person.id === id)
+    const id = event.target.value;
+    const personToDelete = persons.find(person => person.id === id);
+    console.log(personToDelete);
     if (window.confirm(`Delete ${personToDelete.name}?`)) {
       personsService.deletePerson(id).then(() => {
         const updatedPersons = persons.filter(person => person.id !== id);
@@ -84,7 +93,11 @@ const App = () => {
         handleClick={handleClick}
       />
       <h2>Numbers</h2>
-      <Persons persons={persons} filterName={filterName} handleDelete={handleDelete} />
+      <Persons
+        persons={persons}
+        filterName={filterName}
+        handleDelete={handleDelete}
+      />
     </div>
   );
 };

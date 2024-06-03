@@ -9,7 +9,7 @@ const Persons = ({ persons, filterName, handleDelete }) => {
           <div key={filteredPerson.id}>
             {filteredPerson.name} {filteredPerson.number}{" "}
             <button
-              value={filteredPerson}
+              value={filteredPerson.id}
               onClick={handleDelete}
             >
               delete
