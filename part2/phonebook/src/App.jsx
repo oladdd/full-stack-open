@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
+import personsService from "./services/persons";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
@@ -12,14 +11,9 @@ const App = () => {
   const [filterName, setFilterName] = useState("");
 
   useEffect(() => {
-    console.log('effect')
-    axios
-    .get('http://localhost:3001/persons')
-    .then(response => {
-      console.log("promise fulfilled");
-      setPersons(response.data)
-    })
-  }, [])
+    console.log("effect");
+    personsService.getPersons().then(initialPersons => setPersons(initialPersons));
+  }, []);
 
   const handleFilter = (event) => {
     setFilterName(event.target.value);
@@ -49,27 +43,39 @@ const App = () => {
       return;
     }
 
-    const updatedPersons = persons.concat({
+    const personObject = {
       name: newName,
       number: newNumber,
-      id: persons.length + 1,
+      id: `${persons.length > 0 ? persons[persons.length - 1].id + 1 : 1}`,
+    };
+
+    personsService.addPerson(personObject).then(response => {
+      const updatedPersons = persons.concat(response);
+      console.log("New list:", updatedPersons);
+
+      setPersons(updatedPersons);
+      setNewName("");
+      setNewNumber("");
     });
-    console.log("New list:", updatedPersons);
+  };
 
-    setPersons(updatedPersons);
-
-    setNewName("");
-    setNewNumber("");
+  const handleDelete = (event) => {
+    console.log(event.target)
+    const id = parseInt(event.target.value.id);
+    const personToDelete = persons.find(person => person.id === id)
+    if (window.confirm(`Delete ${personToDelete.name}?`)) {
+      personsService.deletePerson(id).then(() => {
+        const updatedPersons = persons.filter(person => person.id !== id);
+        setPersons(updatedPersons);
+      });
+    }
   };
 
   return (
     <div>
       <h2>Phonebook</h2>
-
       <Filter filter={filterName} handleFilter={handleFilter} />
-
       <h2>Add a new</h2>
-
       <PersonForm
         newName={newName}
         newNumber={newNumber}
@@ -77,10 +83,8 @@ const App = () => {
         handleNumberChange={handleNumberChange}
         handleClick={handleClick}
       />
-
       <h2>Numbers</h2>
-
-      <Persons persons={persons} filterName={filterName} />
+      <Persons persons={persons} filterName={filterName} handleDelete={handleDelete} />
     </div>
   );
 };
